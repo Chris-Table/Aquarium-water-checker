@@ -143,6 +143,7 @@ els.analyze.addEventListener("click", async () => {
       body: JSON.stringify({ image, mediaType: "image/jpeg" }),
     });
     const data = await res.json().catch(() => ({}));
+    if (res.status === 429 && !data.error) throw new Error("Too many checks in a row. Wait a minute and try again.");
     if (!res.ok) throw new Error(data.error || `Something went wrong (${res.status}).`);
 
     fillForm(data.readings);

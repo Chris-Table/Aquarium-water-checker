@@ -10,6 +10,16 @@ const MODEL = "claude-opus-5-5";
 const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 // Base64 inflates by ~4/3; Netlify caps request bodies at 6 MB.
 const MAX_BASE64_LENGTH = 5_500_000;
+const MAX_BODY_BYTES = MAX_BASE64_LENGTH + 1_000;
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+// First bytes of each accepted format, so a mislabeled or non-image upload is
+// rejected before it costs an API call.
+const SIGNATURES = {
+  "image/jpeg": (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/png": (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
+  "image/gif": (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38,
+  "image/webp": (b) => b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP",
+};
 
 const nullableNumber = { type: ["number", "null"] };
 
@@ -55,27 +65,58 @@ function json(status, body) {
   return Response.json(body, { status });
 }
 
+// Only this site's own pages may call the API. Browsers always send Origin on
+// a POST fetch, and requiring a JSON body forces a CORS preflight that other
+// sites can't pass, so a third-party page can't spend the API key through a
+// visitor's browser. Scripts can still forge headers; the rate limit in
+// `config` below is what caps those.
+function isSameOrigin(req) {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  try {
+    return new URL(origin).host === new URL(req.url).host;
+  } catch {
+    return false;
+  }
+}
+
+function hasValidSignature(image, mediaType) {
+  if (!BASE64.test(image)) return false;
+  const head = Buffer.from(image.slice(0, 24), "base64");
+  return head.length >= 12 && SIGNATURES[mediaType](head);
+}
+
 export default async (req) => {
   if (req.method !== "POST") return json(405, { error: "Use POST." });
+  if (!isSameOrigin(req)) return json(403, { error: "Requests must come from this site." });
+  if (!(req.headers.get("content-type") || "").toLowerCase().startsWith("application/json")) {
+    return json(415, { error: "Send JSON with an image field." });
+  }
+  if (Number(req.headers.get("content-length")) > MAX_BODY_BYTES) {
+    return json(413, { error: "That image is too large. Try a smaller photo." });
+  }
   if (!process.env.ANTHROPIC_API_KEY) {
-    return json(500, { error: "The server is missing its ANTHROPIC_API_KEY setting." });
+    console.error("ANTHROPIC_API_KEY is not set");
+    return json(500, { error: "The image reader isn't set up yet. Try again later." });
   }
 
-  let image, mediaType;
+  let body;
   try {
-    ({ image, mediaType } = await req.json());
+    body = await req.json();
   } catch {
     return json(400, { error: "Send JSON with an image field." });
   }
+  const { image, mediaType } = body ?? {};
   if (typeof image !== "string" || image.length === 0) return json(400, { error: "No image was sent." });
   if (!MEDIA_TYPES.has(mediaType)) return json(400, { error: "Use a JPEG, PNG, WebP or GIF image." });
   if (image.length > MAX_BASE64_LENGTH) return json(413, { error: "That image is too large. Try a smaller photo." });
+  if (!hasValidSignature(image, mediaType)) return json(400, { error: "That file isn't a valid image." });
 
   let response;
   try {
     response = await client.beta.messages.create({
       model: MODEL,
-      max_tokens: 16000,
+      max_tokens: 4000, // the reply is a small JSON object; this caps the cost of any one call
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "low", format: { type: "json_schema", schema: READINGS_SCHEMA } },
@@ -109,11 +150,11 @@ export default async (req) => {
   try {
     parsed = JSON.parse(text);
   } catch {
-    console.error("Unparseable response", response.stop_reason, text);
+    console.error("Unparseable response", response.stop_reason, text?.slice(0, 500));
     return json(502, { error: "Couldn't read the test results. Try again or enter the values by hand." });
   }
 
-  if (!parsed.is_water_test) {
+  if (!parsed?.readings || !parsed.is_water_test) {
     return json(422, {
       error: "That doesn't look like a water test. Upload a photo of your test strip or test tubes next to the color chart.",
       notes: parsed.notes,
@@ -129,4 +170,10 @@ export default async (req) => {
   });
 };
 
-export const config = { path: "/api/analyze" };
+export const config = {
+  path: "/api/analyze",
+  method: "POST",
+  // Each call spends Claude API credit, so cap how often one visitor can call.
+  // Over the limit, Netlify answers 429 without running the function.
+  rateLimit: { windowLimit: 5, windowSize: 60, aggregateBy: ["ip", "domain"] },
+};

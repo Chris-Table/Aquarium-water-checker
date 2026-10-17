@@ -43,7 +43,7 @@ Then open the URL it prints (usually http://localhost:8888).
 npm test
 ```
 
-The tests cover the water-change rules in `public/assess.js`.
+The tests cover the water-change rules in `public/assess.js` and the request checks in the API.
 
 ## Project layout
 
@@ -53,9 +53,17 @@ public/                 static site (published as-is)
   assess.js             water-quality rules, shared with the function
 netlify/functions/
   analyze.mjs           POST /api/analyze: photo → Claude → readings + verdict
-test/assess.test.mjs    rule tests
-netlify.toml            Netlify build settings
+test/                   rule tests and API request checks
+netlify.toml            Netlify build settings and security headers
 ```
+
+## Security
+
+- `/api/analyze` only accepts same-site JSON POSTs and is rate limited to 5 calls per minute per visitor (Netlify answers 429 above that), so nobody can run up your Claude bill through it. Change `rateLimit` in `netlify/functions/analyze.mjs` to adjust.
+- Uploads are checked for size, format and real image bytes before anything is sent to Claude, and each call is capped at 4,000 output tokens.
+- `netlify.toml` sets a strict Content Security Policy and the usual security headers on every page.
+- The API key lives only in Netlify's environment variables; it is never sent to the browser or committed. Set a monthly spend limit on the key's workspace in the Claude Console as a backstop.
+- Dependabot opens a PR when the SDK has an update.
 
 ## Notes
 
