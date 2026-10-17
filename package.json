@@ -1,0 +1,14 @@
+{
+  "name": "aquarium-water-checker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Upload a photo of an aquarium water test and find out if the water needs changing.",
+  "scripts": {
+    "dev": "netlify dev",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  }
+}

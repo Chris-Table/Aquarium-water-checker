@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aquarium Water Check</title>
+  <meta name="description" content="Upload a photo of your aquarium water test and find out if the water needs changing.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Aquarium Water Check</h1>
+      <p class="lede">Take a photo of your test strip or test tubes next to the color chart. We'll read the results and tell you if your freshwater tank needs a water change.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Upload your test photo</h2>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="photo" accept="image/*" capture="environment">
+        <img id="preview" alt="" hidden>
+        <span id="dropzone-text">Tap to take a photo or choose one</span>
+      </label>
+      <p class="hint">Tips: use daylight or white light, avoid glare, and keep the color chart in the shot.</p>
+      <button id="analyze" type="button" disabled>Read my test</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Check the values</h2>
+      <p class="hint">These fill in from your photo. Fix anything that was misread, or type values in yourself. Leave a box empty if you didn't test it.</p>
+      <form id="readings"></form>
+      <button id="recheck" type="button" class="secondary">Check these values</button>
+    </section>
+
+    <section class="card" id="result" hidden>
+      <div id="verdict" class="verdict"></div>
+      <h3>What to do</h3>
+      <ol id="actions"></ol>
+      <h3>Details</h3>
+      <ul id="details" class="details"></ul>
+    </section>
+
+    <footer>
+      <p>For freshwater aquariums. This is general guidance, not a substitute for knowing what your fish species need. Readings from photos can be off, so double-check anything that looks surprising.</p>
+    </footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
