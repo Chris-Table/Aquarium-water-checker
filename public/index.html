@@ -2,48 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050b18">
   <title>Aquarium Water Check</title>
   <meta name="description" content="Upload a photo of your aquarium water test and find out if the water needs changing.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="backdrop" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="caustics"></span>
+  </div>
+
   <main>
-    <header>
-      <h1>Aquarium Water Check</h1>
-      <p class="lede">Take a photo of your test strip or test tubes next to the color chart. We'll read the results and tell you if your freshwater tank needs a water change.</p>
+    <header class="hero">
+      <span class="eyebrow"><span class="pulse"></span>AI water analysis</span>
+      <h1>Aquarium<br><span class="shine">Water Check</span></h1>
+      <p class="lede">Snap your test strip or test tubes next to the color chart. We'll read every value and tell you exactly what your freshwater tank needs.</p>
     </header>
 
-    <section class="card">
-      <h2>1. Upload your test photo</h2>
+    <section class="glass">
+      <div class="step-head">
+        <span class="step">1</span>
+        <h2>Upload your test photo</h2>
+      </div>
       <label class="dropzone" id="dropzone">
         <input type="file" id="photo" accept="image/*" capture="environment">
         <img id="preview" alt="" hidden>
-        <span id="dropzone-text">Tap to take a photo or choose one</span>
+        <span class="drop-icon" id="drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 10.6 3.5h2.8a1.5 1.5 0 0 1 1.3.7L15.9 6h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>
+        </span>
+        <span id="dropzone-text" class="drop-text">Tap to take a photo or choose one</span>
       </label>
-      <p class="hint">Tips: use daylight or white light, avoid glare, and keep the color chart in the shot.</p>
-      <button id="analyze" type="button" disabled>Read my test</button>
+      <p class="hint">Use daylight or white light, avoid glare, and keep the color chart in the shot.</p>
+      <button id="analyze" type="button" class="btn-primary" disabled>
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="btn-label">Read my test</span>
+      </button>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
-    <section class="card">
-      <h2>2. Check the values</h2>
-      <p class="hint">These fill in from your photo. Fix anything that was misread, or type values in yourself. Leave a box empty if you didn't test it.</p>
+    <section class="glass">
+      <div class="step-head">
+        <span class="step">2</span>
+        <h2>Check the values</h2>
+      </div>
+      <p class="hint">These fill in from your photo. Fix anything that was misread, or type your own values. Leave a box empty if you didn't test it.</p>
       <form id="readings"></form>
-      <button id="recheck" type="button" class="secondary">Check these values</button>
+      <button id="recheck" type="button" class="btn-glass">Check these values</button>
     </section>
 
-    <section class="card" id="result" hidden>
+    <section class="glass result" id="result" hidden>
       <div id="verdict" class="verdict"></div>
       <h3>What to do</h3>
-      <ol id="actions"></ol>
+      <ol id="actions" class="actions"></ol>
       <h3>Details</h3>
       <ul id="details" class="details"></ul>
     </section>
 
     <footer>
-      <p>For freshwater aquariums. This is general guidance, not a substitute for knowing what your fish species need. Readings from photos can be off, so double-check anything that looks surprising.</p>
+      <p>For freshwater aquariums. General guidance only, so check what your fish species need. Photo readings can be off; double-check anything surprising.</p>
     </footer>
   </main>
   <script type="module" src="app.js"></script>

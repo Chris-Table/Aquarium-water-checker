@@ -7,6 +7,7 @@ const els = {
   photo: document.getElementById("photo"),
   preview: document.getElementById("preview"),
   dropzoneText: document.getElementById("dropzone-text"),
+  dropIcon: document.getElementById("drop-icon"),
   analyze: document.getElementById("analyze"),
   status: document.getElementById("status"),
   form: document.getElementById("readings"),
@@ -29,6 +30,7 @@ for (const { key, label, unit } of PARAMETERS) {
   input.min = "0";
   input.step = "any";
   input.inputMode = "decimal";
+  input.placeholder = "Not tested";
   wrapper.append(input);
   els.form.append(wrapper);
 }
@@ -46,6 +48,7 @@ function chooseFile(file) {
   selectedFile = file;
   els.preview.src = URL.createObjectURL(file);
   els.preview.hidden = false;
+  els.dropIcon.hidden = true;
   els.dropzoneText.textContent = "Tap to choose a different photo";
   els.analyze.disabled = false;
   setStatus("");
@@ -130,6 +133,7 @@ function render(assessment, readerNotes) {
 els.analyze.addEventListener("click", async () => {
   if (!selectedFile) return;
   els.analyze.disabled = true;
+  els.analyze.classList.add("loading");
   setStatus("Reading your test. This can take up to half a minute...");
   try {
     const image = await toBase64Jpeg(selectedFile);
@@ -150,6 +154,7 @@ els.analyze.addEventListener("click", async () => {
     setStatus(err.message || "Something went wrong. Try again.", true);
   } finally {
     els.analyze.disabled = false;
+    els.analyze.classList.remove("loading");
   }
 });
 
